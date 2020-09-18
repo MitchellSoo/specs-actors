@@ -189,6 +189,7 @@ func MigrateStateTree(ctx context.Context, store cbor.IpldStore, stateRootIn cid
 		if err := sem.Acquire(ctx, 1); err != nil {
 			return err
 		}
+		fmt.Printf("within main loop, launching a new work process\n")
 		go migrateOneActor(ctx, store, addr, actorIn, actorsOut, transferCh, errCh)
 		return nil
 	})
