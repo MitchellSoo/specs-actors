@@ -99,12 +99,15 @@ func migrateOneActor(ctx context.Context, store cbor.IpldStore, addr address.Add
 	fmt.Printf("within migrate one actor\n")
 	// This will be migrated at the end
 	if actorIn.Code == builtin0.VerifiedRegistryActorCodeID {
+		fmt.Printf("skip verifreg\n")
 		sem.Release(1)
 		return
 	} else if actorIn.Code == builtin0.StorageMinerActorCodeID {
+		fmt.Printf("special case miner\n")
 		codeOut = minerMigration.OutCodeCID
 		headOut, transfer, err = minerMigration.MinerStateMigration.MigrateState(ctx, store, actorIn.Head, actorIn.Balance)
 	} else {
+		fmt.Printf("normal migration\n")
 		migration := migrations[actorIn.Code]
 		codeOut = migration.OutCodeCID
 		headOut, err = migration.StateMigration.MigrateState(ctx, store, actorIn.Head)
