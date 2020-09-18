@@ -108,7 +108,10 @@ func migrateOneActor(ctx context.Context, store cbor.IpldStore, addr address.Add
 		headOut, transfer, err = minerMigration.MinerStateMigration.MigrateState(ctx, store, actorIn.Head, actorIn.Balance)
 	} else {
 		fmt.Printf("normal migration addr %s, inCode %s, actorType: %s,\n", addr, actorIn.Code, builtin0.ActorNameByCode(actorIn.Code))
-		migration := migrations[actorIn.Code]
+		migration, ok := migrations[actorIn.Code]
+		if !ok {
+			fmt.Printf("failed to read migration at this code\n")
+		}
 		codeOut = migration.OutCodeCID
 		headOut, err = migration.StateMigration.MigrateState(ctx, store, actorIn.Head)
 	}
