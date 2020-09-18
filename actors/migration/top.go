@@ -2,6 +2,7 @@ package migration
 
 import (
 	"context"
+	"fmt"
 
 	address "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -95,6 +96,7 @@ func migrateOneActor(ctx context.Context, store cbor.IpldStore, addr address.Add
 	var headOut, codeOut cid.Cid
 	var err error
 	transfer := big.Zero()
+	fmt.Printf("within migrate one actor\n")
 	// This will be migrated at the end
 	if actorIn.Code == builtin0.VerifiedRegistryActorCodeID {
 		sem.Release(1)
@@ -107,6 +109,7 @@ func migrateOneActor(ctx context.Context, store cbor.IpldStore, addr address.Add
 		codeOut = migration.OutCodeCID
 		headOut, err = migration.StateMigration.MigrateState(ctx, store, actorIn.Head)
 	}
+	fmt.Printf("migrated %s actor at addr %s\n", builtin.ActorNameByCode(codeOut), addr)
 	if err != nil {
 		err = xerrors.Errorf("state migration error on %s actor at addr %s: %w", builtin.ActorNameByCode(codeOut), addr, err)
 		sem.Release(1)
