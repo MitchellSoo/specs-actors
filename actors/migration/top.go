@@ -23,6 +23,7 @@ var (
 	maxWorkers = 2 // TODO evaluate empirically
 	sem        *semaphore.Weighted
 	migMu      = &sync.Mutex{}
+	actOutMu   = &sync.Mutex{}
 )
 
 type StateMigration interface {
@@ -126,7 +127,9 @@ func migrateOneActor(ctx context.Context, store cbor.IpldStore, addr address.Add
 		CallSeqNum: actorIn.CallSeqNum,
 		Balance:    big.Add(actorIn.Balance, transfer),
 	}
+	actOutMu.Lock()
 	err = actorsOut.SetActor(addr, &actorOut)
+	actOutMu.Unlock()
 	if err != nil {
 		sem.Release(1)
 		errCh <- err
@@ -239,7 +242,8 @@ READEND:
 		CallSeqNum: verifRegActorIn.CallSeqNum,
 		Balance:    verifRegActorIn.Balance,
 	}
-	if err := actorsOut.SetActor(builtin.VerifiedRegistryActorAddr, &verifRegActorOut); err != nil {
+	err = actorsOut.SetActor(builtin.VerifiedRegistryActorAddr, &verifRegActorOut)
+	if err != nil {
 		return cid.Undef, err
 	}
 
