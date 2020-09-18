@@ -92,7 +92,7 @@ var minerMigration = MinerMigration{
 	MinerStateMigration: &minerMigrator{},
 }
 
-func migrateOneActor(ctx context.Context, store cbor.IpldStore, addr address.Address, actorIn *states.Actor, actorsOut *states.Tree, transferCh chan big.Int, errCh chan error) {
+func migrateOneActor(ctx context.Context, store cbor.IpldStore, addr address.Address, actorIn states.Actor, actorsOut *states.Tree, transferCh chan big.Int, errCh chan error) {
 	var headOut, codeOut cid.Cid
 	var err error
 	transfer := big.Zero()
@@ -196,7 +196,7 @@ func MigrateStateTree(ctx context.Context, store cbor.IpldStore, stateRootIn cid
 			return err
 		}
 		fmt.Printf("within main loop, launching a new work process\n")
-		go migrateOneActor(ctx, store, addr, actorIn, actorsOut, transferCh, errCh)
+		go migrateOneActor(ctx, store, addr, *actorIn, actorsOut, transferCh, errCh)
 		return nil
 	})
 	if err != nil {
