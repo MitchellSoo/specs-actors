@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	maxWorkers = 2 // TODO evaluate empirically
+	maxWorkers = 4 // TODO evaluate empirically
 	sem        *semaphore.Weighted
 	migMu      = &sync.Mutex{}
 	actOutMu   = &sync.Mutex{}
