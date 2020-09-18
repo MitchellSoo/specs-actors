@@ -21,7 +21,7 @@ import (
 
 var (
 	maxWorkers = 1 // TODO evaluate empirically
-	sem        = semaphore.NewWeighted(int64(maxWorkers))
+	sem        *semaphore.Weighted
 	migMu      = &sync.Mutex{}
 )
 
@@ -168,6 +168,7 @@ func MigrateStateTree(ctx context.Context, store cbor.IpldStore, stateRootIn cid
 	transferFromBurnt := big.Zero()
 
 	// Setup synchronization
+	sem = semaphore.NewWeighted(int64(maxWorkers)) // reset global for each invocation
 	errCh := make(chan error)
 	transferCh := make(chan big.Int)
 
