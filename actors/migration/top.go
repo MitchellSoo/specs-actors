@@ -107,11 +107,9 @@ func migrateOneActor(ctx context.Context, store cbor.IpldStore, addr address.Add
 		codeOut = minerMigration.OutCodeCID
 		headOut, transfer, err = minerMigration.MinerStateMigration.MigrateState(ctx, store, actorIn.Head, actorIn.Balance)
 	} else {
-		fmt.Printf("normal migration addr %s\n", addr)
+		fmt.Printf("normal migration addr %s, inCode %s, actorType: %s,\n", addr, actorIn.Code, builtin0.ActorNameByCode(actorIn.Code))
 		migration := migrations[actorIn.Code]
-		fmt.Printf("normal migration: %v", migration)
 		codeOut = migration.OutCodeCID
-		fmt.Printf("normal migration actor type: %s\n", builtin.ActorNameByCode(codeOut))
 		headOut, err = migration.StateMigration.MigrateState(ctx, store, actorIn.Head)
 	}
 
