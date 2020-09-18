@@ -3,6 +3,7 @@ package migration
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	address "github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -22,6 +23,7 @@ import (
 var (
 	maxWorkers = 1 // TODO evaluate empirically
 	sem        = semaphore.NewWeighted(int64(maxWorkers))
+	migMu      = &sync.Mutex{}
 )
 
 type StateMigration interface {
@@ -96,22 +98,17 @@ func migrateOneActor(ctx context.Context, store cbor.IpldStore, addr address.Add
 	var headOut, codeOut cid.Cid
 	var err error
 	transfer := big.Zero()
-	fmt.Printf("within migrate one actor\n")
 	// This will be migrated at the end
 	if actorIn.Code == builtin0.VerifiedRegistryActorCodeID {
-		fmt.Printf("skip verifreg\n")
 		sem.Release(1)
 		return
 	} else if actorIn.Code == builtin0.StorageMinerActorCodeID {
-		fmt.Printf("special case miner\n")
 		codeOut = minerMigration.OutCodeCID
 		headOut, transfer, err = minerMigration.MinerStateMigration.MigrateState(ctx, store, actorIn.Head, actorIn.Balance)
 	} else {
-		fmt.Printf("normal migration addr %s, inCode %s, actorType: %s,\n", addr, actorIn.Code, builtin0.ActorNameByCode(actorIn.Code))
-		migration, ok := migrations[actorIn.Code]
-		if !ok {
-			fmt.Printf("failed to read migration at this code\n")
-		}
+		migMu.Lock()
+		migration := migrations[actorIn.Code]
+		migMu.Unlock()
 		codeOut = migration.OutCodeCID
 		headOut, err = migration.StateMigration.MigrateState(ctx, store, actorIn.Head)
 	}
@@ -164,7 +161,9 @@ func MigrateStateTree(ctx context.Context, store cbor.IpldStore, stateRootIn cid
 
 	// Extra actor setup
 	// power
+	migMu.Lock()
 	pm := migrations[builtin0.StoragePowerActorCodeID].StateMigration.(*powerMigrator)
+	migMu.Unlock()
 	pm.actorsIn = actorsIn
 	// miner
 	transferFromBurnt := big.Zero()
@@ -220,7 +219,9 @@ READEND:
 	}
 
 	// Migrate verified registry
+	migMu.Lock()
 	vm := migrations[builtin0.VerifiedRegistryActorCodeID].StateMigration.(*verifregMigrator)
+	migMu.Unlock()
 	vm.actorsOut = actorsOut
 	verifRegActorIn, found, err := actorsIn.GetActor(builtin0.VerifiedRegistryActorAddr)
 	if err != nil {
